@@ -320,6 +320,10 @@ func (sw *fakeStatusWriter) Patch(ctx context.Context, obj client.Object, patch 
 	return sw.Client.Patch(ctx, obj, patch)
 }
 
+func (sw *fakeStatusWriter) Apply(ctx context.Context, obj runtime.ApplyConfiguration, opts ...client.SubResourceApplyOption) error {
+	return nil
+}
+
 func (sw *fakeStatusWriter) Create(ctx context.Context, obj client.Object, subResource client.Object, opts ...client.SubResourceCreateOption) error {
 	return nil
 }
