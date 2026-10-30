@@ -1,11 +1,15 @@
 # Build stage
-FROM golang:1.27 as builder
+FROM --platform=$BUILDPLATFORM golang:1.27 AS builder
+
+ARG TARGETOS
+ARG TARGETARCH
 
 WORKDIR /workspace
 
 # Copy Go module files
 COPY go.mod go.sum ./
-RUN go mod download
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download
 
 # Copy source code
 COPY cmd/ cmd/
@@ -13,7 +17,9 @@ COPY pkg/ pkg/
 COPY hack/ hack/
 
 # Build the operator binary
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager cmd/main.go
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -ldflags="-s -w" -o manager cmd/main.go
 
 # Runtime stage
 FROM gcr.io/distroless/static:nonroot
