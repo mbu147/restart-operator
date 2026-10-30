@@ -7,6 +7,9 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Build Docker Image
@@ -37,6 +40,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -64,6 +68,7 @@ jobs:
             type=sha,format=short
 
       - name: Build and push
+        id: build
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -71,5 +76,40 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          provenance: mode=max
+          sbom: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign image (keyless)
+        run: cosign sign --yes "ghcr.io/mbu147/restart-operator@${{ steps.build.outputs.digest }}"
+
+  scan:
+    name: Scan Docker Image
+    runs-on: ubuntu-latest
+    needs: [build]
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Build image for scanning
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          load: true
+          tags: restart-operator:scan
+          cache-from: type=gha
+
+      - name: Run Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: restart-operator:scan
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '1'

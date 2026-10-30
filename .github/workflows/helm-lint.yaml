@@ -10,6 +10,9 @@ on:
     paths:
       - 'charts/**'
 
+permissions:
+  contents: read
+
 jobs:
   lint:
     name: Lint Helm Charts
@@ -29,3 +32,4 @@ jobs:
       - name: Validate Helm chart
         run: |
           helm template ./charts/restart-operator --debug
+          helm template ./charts/restart-operator --set operator.watchNamespace=apps --set replicaCount=2 --set networkPolicy.enabled=true --set image.digest=sha256:0000000000000000000000000000000000000000000000000000000000000000 > /dev/null

@@ -6,7 +6,10 @@ replicaCount: 1
 image:
   repository: ghcr.io/mbu147/restart-operator
   pullPolicy: IfNotPresent
+  # Defaults to the chart appVersion
   tag: ""
+  # Optional immutable digest (sha256:...); takes precedence over tag
+  digest: ""
 
 imagePullSecrets: []
 nameOverride: ""
@@ -22,13 +25,20 @@ serviceAccount:
   name: ""
 
 podAnnotations: {}
-podSecurityContext: {}
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
 
 securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
   runAsNonRoot: true
   runAsUser: 65532
   runAsGroup: 65532
-  fsGroup: 65532
+  capabilities:
+    drop:
+      - ALL
 
 resources:
   limits:
@@ -41,6 +51,19 @@ resources:
 nodeSelector: {}
 tolerations: []
 affinity: {}
+topologySpreadConstraints: []
+terminationGracePeriodSeconds: 30
+
+# PodDisruptionBudget (only rendered when replicaCount > 1)
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Restrict traffic: the operator only needs egress to the API server (and DNS)
+networkPolicy:
+  enabled: false
+  # Sources allowed to scrape the metrics port (empty = any source)
+  metricsIngressFrom: []
 
 # Settings for the operator
 operator:

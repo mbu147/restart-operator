@@ -1,55 +1,69 @@
 {{- if .Values.rbac.create -}}
+{{- $scoped := ne (default "" .Values.operator.watchNamespace) "" -}}
+{{- $kind := ternary "Role" "ClusterRole" $scoped -}}
+{{- $bindingKind := ternary "RoleBinding" "ClusterRoleBinding" $scoped -}}
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: {{ $kind }}
 metadata:
   name: {{ include "restart-operator.fullname" . }}
+  {{- if $scoped }}
+  namespace: {{ .Values.operator.watchNamespace }}
+  {{- end }}
   labels:
     {{- include "restart-operator.labels" . | nindent 4 }}
 rules:
-  # Allow managing restart schedules
   - apiGroups: ["restart-operator.k8s"]
     resources: ["restartschedules"]
-    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-  
-  # Allow managing status subresource
+    verbs: ["get", "list", "watch", "update", "patch"]
   - apiGroups: ["restart-operator.k8s"]
     resources: ["restartschedules/status"]
     verbs: ["get", "update", "patch"]
-  
-  # Allow managing workloads that need to be restarted
+  # Restarts are triggered by patching the pod template of the workload
   - apiGroups: ["apps"]
     resources: ["deployments", "statefulsets", "daemonsets"]
     verbs: ["get", "list", "watch", "update", "patch"]
-  
-  # For leader election
-  - apiGroups: ["coordination.k8s.io"]
-    resources: ["leases"]
-    verbs: ["create", "get", "update", "list", "watch"]
-  
-  # For event publishing
   - apiGroups: [""]
     resources: ["events"]
     verbs: ["create", "patch"]
 
 ---
-# Cluster role binding for all namespaces
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
+kind: {{ $bindingKind }}
 metadata:
   name: {{ include "restart-operator.fullname" . }}
+  {{- if $scoped }}
+  namespace: {{ .Values.operator.watchNamespace }}
+  {{- end }}
   labels:
     {{- include "restart-operator.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
+  kind: {{ $kind }}
   name: {{ include "restart-operator.fullname" . }}
 subjects:
   - kind: ServiceAccount
     name: {{ include "restart-operator.serviceAccountName" . }}
     namespace: {{ .Release.Namespace }}
 
+{{- if .Values.operator.leaderElection.enabled }}
 ---
-# Leader election role binding in operator namespace
+# Leader election only needs leases in the operator's own namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "restart-operator.fullname" . }}-leader-election
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "restart-operator.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["create", "get", "update", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
@@ -57,13 +71,13 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "restart-operator.labels" . | nindent 4 }}
-  annotations:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: {{ include "restart-operator.fullname" . }}
+  kind: Role
+  name: {{ include "restart-operator.fullname" . }}-leader-election
 subjects:
   - kind: ServiceAccount
     name: {{ include "restart-operator.serviceAccountName" . }}
     namespace: {{ .Release.Namespace }}
+{{- end }}
 {{- end }}

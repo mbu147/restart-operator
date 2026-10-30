@@ -6,6 +6,9 @@ on:
       - 'v*'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   publish-oci:
     name: Publish Helm chart to GHCR (OCI)
@@ -50,3 +53,18 @@ jobs:
           for chart in ./dist/*.tgz; do
             helm push "$chart" "oci://ghcr.io/${OWNER}/charts"
           done
+
+  github-release:
+    name: Create GitHub Release
+    if: github.ref_type == 'tag'
+    needs: [publish-oci]
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create release with generated notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
+            || gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --generate-notes

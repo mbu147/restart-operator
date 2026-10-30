@@ -1,18 +1,31 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "helpers:pinGitHubActionDigests",
+    "docker:pinDigests"
+  ],
+  "schedule": ["before 6am on monday"],
+  "lockFileMaintenance": {
+    "enabled": true
+  },
+  "vulnerabilityAlerts": {
+    "schedule": ["at any time"]
+  },
   "packageRules": [
     {
-      "description": "group all dependencies into a single PR",
-      "groupName": "all dependencies",
-      "groupSlug": "all-dependencies",
-      "matchPackageNames": ["*"]
-    },
-    {
-      "description": "auto merge non-major updates",
+      "description": "group all non-major updates into a single PR",
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "groupName": "all non-major dependencies",
+      "groupSlug": "all-non-major",
       "automerge": true,
       "automergeType": "pr",
       "platformAutomerge": false
+    },
+    {
+      "description": "major updates get their own PR per dependency, no automerge",
+      "matchUpdateTypes": ["major"],
+      "automerge": false
     }
   ]
 }
