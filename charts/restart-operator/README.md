@@ -26,7 +26,7 @@ The following table lists the configurable parameters of the Restart Operator ch
 | Parameter | Description | Default |
 |-----------|-------------|---------|
 | `replicaCount` | Number of operator replicas | `1` |
-| `image.repository` | Image repository | `archsyscall/restart-operator` |
+| `image.repository` | Image repository | `ghcr.io/mbu147/restart-operator` |
 | `image.pullPolicy` | Image pull policy | `IfNotPresent` |
 | `image.tag` | Image tag | `latest` |
 | `imagePullSecrets` | Image pull secrets | `[]` |

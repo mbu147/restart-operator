@@ -4,8 +4,8 @@ import (
 	"flag"
 	"os"
 
-	"github.com/archsyscall/restart-operator/pkg/apis/v1alpha1"
-	"github.com/archsyscall/restart-operator/pkg/controller"
+	"github.com/mbu147/restart-operator/pkg/apis/v1alpha1"
+	"github.com/mbu147/restart-operator/pkg/controller"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"

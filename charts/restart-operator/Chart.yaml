@@ -2,20 +2,19 @@ apiVersion: v2
 name: restart-operator
 description: A Helm chart for Kubernetes restart-operator
 type: application
-version: 0.1.1-alpha1
-appVersion: "0.1.0"
+version: 0.0.1
+appVersion: "0.0.1"
 keywords:
   - kubernetes
   - operator
   - restart
   - cron
   - scheduling
-home: https://github.com/archsyscall/restart-operator
+home: https://github.com/mbu147/restart-operator
 maintainers:
-  - name: archsyscall
-    email: archsyscall@example.com
+  - name: mbu147
 sources:
-  - https://github.com/archsyscall/restart-operator
+  - https://github.com/mbu147/restart-operator
 annotations:
   artifacthub.io/containsSecurityUpdates: "false"
   artifacthub.io/operator: "true"

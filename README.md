@@ -17,9 +17,7 @@ The Restart Operator allows you to define cron-based schedules for automatically
 ## Installation
 
 ```bash
-helm repo add archsyscall https://archsyscall.github.io/restart-operator
-helm repo update
-helm install restart-operator archsyscall/restart-operator
+helm install restart-operator oci://ghcr.io/mbu147/charts/restart-operator --version <chart-version>
 ```
 
 ## Usage

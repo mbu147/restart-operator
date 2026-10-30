@@ -1,4 +1,4 @@
-module github.com/archsyscall/restart-operator
+module github.com/mbu147/restart-operator
 
 go 1.26.0
 

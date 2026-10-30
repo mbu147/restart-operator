@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/archsyscall/restart-operator/pkg/apis/v1alpha1"
+	"github.com/mbu147/restart-operator/pkg/apis/v1alpha1"
 	"github.com/robfig/cron/v3"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"

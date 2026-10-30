@@ -1,34 +1,52 @@
-name: Release Helm Charts
+name: Release Helm Chart
 
 on:
   push:
-    branches:
-      - main
-    paths:
-      - 'charts/**'
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 jobs:
-  release:
+  publish-oci:
+    name: Publish Helm chart to GHCR (OCI)
     permissions:
-      contents: write
+      contents: read
       packages: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-
-      - name: Configure Git
-        run: |
-          git config user.name "$GITHUB_ACTOR"
-          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
       - name: Install Helm
         uses: azure/setup-helm@v5
 
-      - name: Run chart-releaser
-        uses: helm/chart-releaser-action@v1.8.0
+      - name: Determine version
+        id: version
+        run: |
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=0.0.0-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Lint chart
+        run: helm lint ./charts/restart-operator
+
+      - name: Package chart
+        run: |
+          helm package ./charts/restart-operator \
+            --version "${{ steps.version.outputs.version }}" \
+            --app-version "${{ steps.version.outputs.version }}" \
+            --destination ./dist
+
+      - name: Login to GHCR
         env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "$GHCR_TOKEN" | helm registry login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+
+      - name: Push chart to GHCR
+        run: |
+          OWNER="${GITHUB_REPOSITORY_OWNER,,}"
+          for chart in ./dist/*.tgz; do
+            helm push "$chart" "oci://ghcr.io/${OWNER}/charts"
+          done

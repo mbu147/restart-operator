@@ -4,9 +4,9 @@
 replicaCount: 1
 
 image:
-  repository: archsyscall/restart-operator
+  repository: ghcr.io/mbu147/restart-operator
   pullPolicy: IfNotPresent
-  tag: "latest"
+  tag: ""
 
 imagePullSecrets: []
 nameOverride: ""
